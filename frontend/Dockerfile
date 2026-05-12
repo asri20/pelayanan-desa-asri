@@ -18,4 +18,4 @@ ENV PORT 8080
 EXPOSE 8080
 
 # Jalankan serve dengan path yang lebih jelas
-CMD ["serve", "-s", "build", "-l", "8080"]
+CMD ["serve", "-s", "build", "-l", "8080", "--single"]
