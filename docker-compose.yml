@@ -1,0 +1,18 @@
+version: '3.8'
+services:
+  backend:
+    build: ./backend
+    ports:
+      - "5000:5000"
+    # Hapus dulu bagian volumes untuk memastikan node_modules dari container yang dipakai
+    volumes:
+      - ./backend/uploads:/app/uploads
+    environment:
+      - PORT=5000
+
+  frontend:
+    build: ./frontend
+    ports:
+      - "3000:80" # Map port 80 di container ke 3000 di laptop
+    depends_on:
+      - backend

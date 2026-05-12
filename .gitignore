@@ -1,0 +1,15 @@
+# Mengabaikan folder library yang sangat berat
+node_modules/
+backend/node_modules/
+frontend/node_modules/
+
+# Mengabaikan folder hasil build frontend
+frontend/build/
+
+# Mengabaikan file rahasia (kunci/env)
+.env
+*.json.key
+
+# Mengabaikan file upload lokal
+backend/uploads/*
+!backend/uploads/.gitkeepcd
