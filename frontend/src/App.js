@@ -596,17 +596,10 @@ const STYLES = `
   }
 `;
 
-// ── ICONS (inline SVG as emoji fallback) ──
-const Icon = ({ name }) => {
-  const icons = {
-    building: '🏛️', doc: '📄', search: '🔍', user: '👤',
-    admin: '⚙️', check: '✅', clock: '⏳', upload: '📁',
-    refresh: '🔄', send: '📨', shield: '🛡️', arrow: '→',
-  };
-  return <span>{icons[name] || ''}</span>;
-};
-
 function App() {
+  // Variabel URL Backend Cloud Run kamu
+  const API_URL = "https://backend-852230301371.asia-southeast2.run.app";
+
   const [view, setView] = useState('user');
   const [nama, setNama] = useState('');
   const [file, setFile] = useState(null);
@@ -627,13 +620,14 @@ function App() {
     formData.append('tipe', 'Surat Domisili');
     formData.append('dokumen', file);
     try {
-      const res = await fetch('http://localhost:5000/api/pengajuan', { method: 'POST', body: formData });
+      // Endpoint Pengajuan
+      const res = await fetch(`${API_URL}/api/pengajuan`, { method: 'POST', body: formData });
       const data = await res.json();
       setSuccessData({ id: data.id, nama });
       setNama('');
       setFile(null);
     } catch {
-      alert("Gagal konek ke server. Pastikan backend berjalan!");
+      alert("Gagal konek ke server Cloud. Pastikan backend di Cloud Run aktif!");
     } finally {
       setLoading(false);
     }
@@ -641,21 +635,23 @@ function App() {
 
   const fetchAdminData = async () => {
     try {
-      const res = await fetch('http://localhost:5000/api/admin/data');
+      // Endpoint Ambil Data
+      const res = await fetch(`${API_URL}/api/admin/data`);
       const data = await res.json();
       setListData(data);
-    } catch { console.error("Gagal mengambil data admin"); }
+    } catch { console.error("Gagal mengambil data admin dari Cloud"); }
   };
 
   const updateStatus = async (id) => {
     try {
-      await fetch(`http://localhost:5000/api/admin/update/${id}`, {
+      // Endpoint Update Status
+      await fetch(`${API_URL}/api/admin/update/${id}`, {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ status: 'Selesai' })
       });
       fetchAdminData();
-    } catch { alert("Gagal update status"); }
+    } catch { alert("Gagal update status di database Cloud"); }
   };
 
   const handleTrack = async () => {
@@ -663,12 +659,13 @@ function App() {
     setTrackResult(null);
     setTrackError('');
     try {
-      const res = await fetch('http://localhost:5000/api/admin/data');
+      // Endpoint Tracking (menggunakan data list)
+      const res = await fetch(`${API_URL}/api/admin/data`);
       const data = await res.json();
       const found = data.find(d => String(d.id) === trackId.trim());
       if (found) setTrackResult(found);
       else setTrackError('ID tracking tidak ditemukan.');
-    } catch { setTrackError('Gagal menghubungi server.'); }
+    } catch { setTrackError('Gagal menghubungi server Cloud.'); }
   };
 
   return (
