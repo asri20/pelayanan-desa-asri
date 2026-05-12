@@ -1,14 +1,19 @@
-# Stage 1: Build aplikasi React
-FROM node:22-alpine AS build
+# Build stage
+FROM node:18-alpine as build-stage
 WORKDIR /app
 COPY package*.json ./
 RUN npm install
 COPY . .
 RUN npm run build
 
-# Stage 2: Serve menggunakan Nginx agar ringan di Cloud [cite: 35]
-FROM nginx:alpine
-# Copy hasil build ke folder default Nginx
-COPY --from=build /app/build /usr/share/nginx/html
-EXPOSE 80
-CMD ["nginx", "-g", "daemon off;"]
+# Production stage
+FROM node:18-alpine
+RUN npm install -g serve
+WORKDIR /app
+COPY --from=build-stage /app/build ./build
+
+# Cloud Run menggunakan port 8080 secara default
+EXPOSE 8080
+
+# Jalankan serve pada port 8080
+CMD ["serve", "-s", "build", "-l", "8080"]
