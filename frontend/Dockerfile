@@ -10,10 +10,12 @@ RUN npm run build
 FROM node:18-alpine
 RUN npm install -g serve
 WORKDIR /app
+# Ambil hasil build dari stage sebelumnya
 COPY --from=build-stage /app/build ./build
 
-# Cloud Run menggunakan port 8080 secara default
+# Pastikan Cloud Run tahu kita pakai port 8080
+ENV PORT 8080
 EXPOSE 8080
 
-# Jalankan serve pada port 8080
+# Jalankan serve dengan path yang lebih jelas
 CMD ["serve", "-s", "build", "-l", "8080"]
