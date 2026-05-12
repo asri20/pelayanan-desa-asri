@@ -1,61 +1,92 @@
 const express = require('express');
 const cors = require('cors');
 const multer = require('multer');
-const path = require('path');
+const mysql = require('mysql2/promise');
+const { Storage } = require('@google-cloud/storage');
+require('dotenv').config();
 
 const app = express();
 app.use(cors());
 app.use(express.json());
 
-// Simulasi Database (Nanti dihubungkan ke Google Cloud SQL / RDS) 
-let dataPelayanan = []; 
+// 1. Konfigurasi Database Cloud SQL [cite: 37, 48, 56]
+const dbConfig = {
+    host: process.env.DB_HOST,
+    user: process.env.DB_USER,
+    password: process.env.DB_PASSWORD,
+    database: process.env.DB_NAME,
+    port: process.env.DB_PORT || 3306
+};
 
-// Konfigurasi Multer (Persiapan fitur Upload File ke S3/GCS) [cite: 46, 57]
-const storage = multer.diskStorage({
-    destination: './uploads/',
-    filename: (req, file, cb) => {
-        cb(null, 'DOC-' + Date.now() + path.extname(file.originalname));
+// 2. Konfigurasi Google Cloud Storage (Padanan Amazon S3) [cite: 38, 46, 57]
+const storageGCS = new Storage({
+    projectId: process.env.GCS_PROJECT_ID
+});
+const bucket = storageGCS.bucket(process.env.GCS_BUCKET_NAME);
+
+// Multer memory storage agar file langsung diteruskan ke Cloud Storage
+const upload = multer({ storage: multer.memoryStorage() });
+
+// --- API ROUTES ---
+
+// API 1: Pengajuan Baru (Simpan ke Cloud SQL & Upload ke GCS) [cite: 25, 43, 46]
+app.post('/api/pengajuan', upload.single('dokumen'), async (req, res) => {
+    try {
+        let fileNameGCS = null;
+
+        // Upload ke Cloud Storage jika ada file 
+        if (req.file) {
+            fileNameGCS = `DOC-${Date.now()}-${req.file.originalname}`;
+            const blob = bucket.file(fileNameGCS);
+            const blobStream = blob.createWriteStream();
+
+            blobStream.end(req.file.buffer);
+            // Catatan: Di produksi, akses file nanti melalui Cloud CDN [cite: 49, 58, 64]
+        }
+
+        // Simpan data ke Cloud SQL [cite: 37, 48]
+        const connection = await mysql.createConnection(dbConfig);
+        const [result] = await connection.execute(
+            'INSERT INTO pelayanan (nama, tipe, status, file, tanggal) VALUES (?, ?, ?, ?, ?)',
+            [req.body.nama, req.body.tipe || 'Surat Domisili', 'Pending', fileNameGCS, new Date()]
+        );
+        await connection.end();
+
+        res.json({ message: "Berhasil disimpan di Cloud", id: result.insertId });
+    } catch (error) {
+        console.error(error);
+        res.status(500).json({ message: "Gagal memproses data di Cloud" });
     }
 });
-const upload = multer({ storage });
 
-// API 1: Pengajuan Baru (Wajib ada fitur upload) [cite: 46]
-app.post('/api/pengajuan', upload.single('dokumen'), (req, res) => {
-    const baru = {
-        id: Math.floor(1000 + Math.random() * 9000), // Random ID untuk Tracking [cite: 27]
-        nama: req.body.nama,
-        tipe: req.body.tipe || 'Surat Domisili',
-        status: 'Pending',
-        file: req.file ? req.file.filename : null, // Nama file untuk akses via CDN/CloudFront [cite: 49, 58]
-        tanggal: new Date().toLocaleDateString('id-ID'), // Format tanggal Indonesia
-    };
-    dataPelayanan.push(baru);
-    res.json({ message: "Berhasil", id: baru.id });
-});
+// API 2: Tracking Status (Ambil dari Cloud SQL) [cite: 27]
+app.get('/api/track/:id', async (req, res) => {
+    try {
+        const connection = await mysql.createConnection(dbConfig);
+        const [rows] = await connection.execute('SELECT * FROM pelayanan WHERE id = ?', [req.params.id]);
+        await connection.end();
 
-// API 2: Tracking Spesifik (Optimasi agar tidak tarik semua data) [cite: 27]
-app.get('/api/track/:id', (req, res) => {
-    const { id } = req.params;
-    const hasil = dataPelayanan.find(d => String(d.id) === id);
-    if (hasil) {
-        res.json(hasil);
-    } else {
-        res.status(404).json({ message: "ID Tracking tidak ditemukan" });
+        if (rows.length > 0) {
+            res.json(rows[0]);
+        } else {
+            res.status(404).json({ message: "Data tidak ditemukan" });
+        }
+    } catch (error) {
+        res.status(500).json({ message: "Error koneksi database" });
     }
 });
 
 // API 3: List Data Admin [cite: 31]
-app.get('/api/admin/data', (req, res) => {
-    res.json(dataPelayanan);
+app.get('/api/admin/data', async (req, res) => {
+    try {
+        const connection = await mysql.createConnection(dbConfig);
+        const [rows] = await connection.execute('SELECT * FROM pelayanan ORDER BY id DESC');
+        await connection.end();
+        res.json(rows);
+    } catch (error) {
+        res.status(500).json({ message: "Error mengambil data" });
+    }
 });
 
-// API 4: Update Status oleh Admin [cite: 105]
-app.patch('/api/admin/update/:id', (req, res) => {
-    const { id } = req.params;
-    const { status } = req.body;
-    dataPelayanan = dataPelayanan.map(d => d.id == id ? { ...d, status } : d);
-    res.json({ message: "Status diperbarui" });
-});
-
-const PORT = 5000;
-app.listen(PORT, () => console.log(`Server running on port ${PORT}`));
+const PORT = process.env.PORT || 5000;
+app.listen(PORT, () => console.log(`Server cloud running on port ${PORT}`));
