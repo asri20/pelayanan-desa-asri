@@ -635,12 +635,21 @@ function App() {
 
   const fetchAdminData = async () => {
     try {
-      // Endpoint Ambil Data
-      const res = await fetch(`${API_URL}/api/admin/data`);
-      const data = await res.json();
-      setListData(data);
-    } catch { console.error("Gagal mengambil data admin dari Cloud"); }
-  };
+        const res = await fetch(`${API_URL}/api/admin/data`);
+        const data = await res.json();
+        
+        // PASTIKAN DATA ADALAH ARRAY
+        if (Array.isArray(data)) {
+            setListData(data);
+        } else {
+            setListData([]); // Jika bukan array (tapi pesan error), kosongkan saja
+            console.error("Backend mengirim error:", data.message);
+        }
+    } catch { 
+        setListData([]); 
+        console.error("Gagal mengambil data admin dari Cloud"); 
+    }
+};
 
   const updateStatus = async (id) => {
     try {
