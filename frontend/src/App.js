@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect } from "react";
 
 const STYLES = `
   @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=DM+Serif+Display:ital@0;1&display=swap');
@@ -600,15 +600,15 @@ function App() {
   // Variabel URL Backend Cloud Run kamu
   const API_URL = "https://backend-852230301371.asia-southeast2.run.app";
 
-  const [view, setView] = useState('user');
-  const [nama, setNama] = useState('');
+  const [view, setView] = useState("user");
+  const [nama, setNama] = useState("");
   const [file, setFile] = useState(null);
-  const [trackId, setTrackId] = useState('');
+  const [trackId, setTrackId] = useState("");
   const [trackResult, setTrackResult] = useState(null);
   const [listData, setListData] = useState([]);
   const [loading, setLoading] = useState(false);
   const [successData, setSuccessData] = useState(null);
-  const [trackError, setTrackError] = useState('');
+  const [trackError, setTrackError] = useState("");
 
   const handleUpload = async (e) => {
     e.preventDefault();
@@ -616,18 +616,23 @@ function App() {
     setLoading(true);
     setSuccessData(null);
     const formData = new FormData();
-    formData.append('nama', nama);
-    formData.append('tipe', 'Surat Domisili');
-    formData.append('dokumen', file);
+    formData.append("nama", nama);
+    formData.append("tipe", "Surat Domisili");
+    formData.append("dokumen", file);
     try {
       // Endpoint Pengajuan
-      const res = await fetch(`${API_URL}/api/pengajuan`, { method: 'POST', body: formData });
+      const res = await fetch(`${API_URL}/api/pengajuan`, {
+        method: "POST",
+        body: formData,
+      });
       const data = await res.json();
       setSuccessData({ id: data.id, nama });
-      setNama('');
+      setNama("");
       setFile(null);
     } catch {
-      alert("Gagal konek ke server Cloud. Pastikan backend di Cloud Run aktif!");
+      alert(
+        "Gagal konek ke server Cloud. Pastikan backend di Cloud Run aktif!",
+      );
     } finally {
       setLoading(false);
     }
@@ -635,47 +640,50 @@ function App() {
 
   const fetchAdminData = async () => {
     try {
-        const res = await fetch(`${API_URL}/api/admin/data`);
-        const data = await res.json();
-        
-        // PASTIKAN DATA ADALAH ARRAY
-        if (Array.isArray(data)) {
-            setListData(data);
-        } else {
-            setListData([]); // Jika bukan array (tapi pesan error), kosongkan saja
-            console.error("Backend mengirim error:", data.message);
-        }
-    } catch { 
-        setListData([]); 
-        console.error("Gagal mengambil data admin dari Cloud"); 
+      const res = await fetch(`${API_URL}/api/admin/data`);
+      const data = await res.json();
+
+      // PASTIKAN DATA ADALAH ARRAY
+      if (Array.isArray(data)) {
+        setListData(data);
+      } else {
+        setListData([]); // Jika bukan array (tapi pesan error), kosongkan saja
+        console.error("Backend mengirim error:", data.message);
+      }
+    } catch {
+      setListData([]);
+      console.error("Gagal mengambil data admin dari Cloud");
     }
-};
+  };
 
   const updateStatus = async (id) => {
     try {
-        await fetch(`${API_URL}/api/admin/update-status/${id}`, { // Pakai update-status
-            method: 'PATCH',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ status: 'Selesai' })
-        });
-        fetchAdminData(); // Refresh tabel setelah update
-    } catch { 
-        alert("Gagal update status"); 
+      await fetch(`${API_URL}/api/admin/update-status/${id}`, {
+        // HARUS ADA -status
+        method: "POST", // Ganti ke POST saja biar lebih aman
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ status: "Selesai" }),
+      });
+      fetchAdminData(); // Refresh tabel setelah update
+    } catch {
+      alert("Gagal update status");
     }
-};
+  };
 
   const handleTrack = async () => {
     if (!trackId.trim()) return;
     setTrackResult(null);
-    setTrackError('');
+    setTrackError("");
     try {
       // Endpoint Tracking (menggunakan data list)
       const res = await fetch(`${API_URL}/api/admin/data`);
       const data = await res.json();
-      const found = data.find(d => String(d.id) === trackId.trim());
+      const found = data.find((d) => String(d.id) === trackId.trim());
       if (found) setTrackResult(found);
-      else setTrackError('ID tracking tidak ditemukan.');
-    } catch { setTrackError('Gagal menghubungi server Cloud.'); }
+      else setTrackError("ID tracking tidak ditemukan.");
+    } catch {
+      setTrackError("Gagal menghubungi server Cloud.");
+    }
   };
 
   return (
@@ -691,36 +699,67 @@ function App() {
             <div className="header-sub">Sistem Pelayanan Publik Desa</div>
           </div>
         </div>
-        <button className="btn-switch" onClick={() => {
-          const next = view === 'user' ? 'admin' : 'user';
-          setView(next);
-          setSuccessData(null);
-          if (next === 'admin') fetchAdminData();
-        }}>
-          {view === 'user' ? '⚙️' : '👤'}
-          {view === 'user' ? 'Masuk sebagai Admin' : 'Masuk sebagai Masyarakat'}
+        <button
+          className="btn-switch"
+          onClick={() => {
+            const next = view === "user" ? "admin" : "user";
+            setView(next);
+            setSuccessData(null);
+            if (next === "admin") fetchAdminData();
+          }}
+        >
+          {view === "user" ? "⚙️" : "👤"}
+          {view === "user" ? "Masuk sebagai Admin" : "Masuk sebagai Masyarakat"}
         </button>
       </header>
 
       {/* HERO */}
       <div className="hero">
         <div className="hero-badge">🛡️ &nbsp;Layanan Resmi</div>
-        <h1>{view === 'user' ? 'Ajukan Surat Domisili\nSecara Online' : 'Dashboard Admin\nKelola Pengajuan'}</h1>
-        <p>{view === 'user'
-          ? 'Proses cepat, aman, dan transparan. Isi formulir di bawah dan unggah dokumen pendukung Anda.'
-          : 'Pantau dan verifikasi seluruh pengajuan surat dari warga secara real-time.'}</p>
+        <h1>
+          {view === "user"
+            ? "Ajukan Surat Domisili\nSecara Online"
+            : "Dashboard Admin\nKelola Pengajuan"}
+        </h1>
+        <p>
+          {view === "user"
+            ? "Proses cepat, aman, dan transparan. Isi formulir di bawah dan unggah dokumen pendukung Anda."
+            : "Pantau dan verifikasi seluruh pengajuan surat dari warga secara real-time."}
+        </p>
         <div className="hero-stats">
-          {view === 'user' ? (
+          {view === "user" ? (
             <>
-              <div><div className="hero-stat-num">1-3</div><div className="hero-stat-label">Hari Proses</div></div>
-              <div><div className="hero-stat-num">100%</div><div className="hero-stat-label">Aman & Terenkripsi</div></div>
-              <div><div className="hero-stat-num">24/7</div><div className="hero-stat-label">Bisa Diakses</div></div>
+              <div>
+                <div className="hero-stat-num">1-3</div>
+                <div className="hero-stat-label">Hari Proses</div>
+              </div>
+              <div>
+                <div className="hero-stat-num">100%</div>
+                <div className="hero-stat-label">Aman & Terenkripsi</div>
+              </div>
+              <div>
+                <div className="hero-stat-num">24/7</div>
+                <div className="hero-stat-label">Bisa Diakses</div>
+              </div>
             </>
           ) : (
             <>
-              <div><div className="hero-stat-num">{listData.length}</div><div className="hero-stat-label">Total Pengajuan</div></div>
-              <div><div className="hero-stat-num">{listData.filter(d => d.status === 'Selesai').length}</div><div className="hero-stat-label">Selesai</div></div>
-              <div><div className="hero-stat-num">{listData.filter(d => d.status !== 'Selesai').length}</div><div className="hero-stat-label">Pending</div></div>
+              <div>
+                <div className="hero-stat-num">{listData.length}</div>
+                <div className="hero-stat-label">Total Pengajuan</div>
+              </div>
+              <div>
+                <div className="hero-stat-num">
+                  {listData.filter((d) => d.status === "Selesai").length}
+                </div>
+                <div className="hero-stat-label">Selesai</div>
+              </div>
+              <div>
+                <div className="hero-stat-num">
+                  {listData.filter((d) => d.status !== "Selesai").length}
+                </div>
+                <div className="hero-stat-label">Pending</div>
+              </div>
             </>
           )}
         </div>
@@ -728,7 +767,7 @@ function App() {
 
       {/* MAIN */}
       <main className="main">
-        {view === 'user' ? (
+        {view === "user" ? (
           <>
             {/* SUCCESS ALERT */}
             {successData && (
@@ -736,7 +775,9 @@ function App() {
                 <span className="alert-icon">✅</span>
                 <div>
                   <div className="alert-title">Pengajuan berhasil dikirim!</div>
-                  <div>Simpan ID Tracking berikut untuk memantau status surat Anda:</div>
+                  <div>
+                    Simpan ID Tracking berikut untuk memantau status surat Anda:
+                  </div>
                   <span className="id-highlight"># {successData.id}</span>
                 </div>
               </div>
@@ -747,46 +788,70 @@ function App() {
               <div className="card-header">
                 <div className="card-icon">📄</div>
                 <div>
-                  <div className="card-title">Form Pengajuan Surat Domisili</div>
-                  <div className="card-subtitle">Lengkapi semua kolom yang wajib diisi</div>
+                  <div className="card-title">
+                    Form Pengajuan Surat Domisili
+                  </div>
+                  <div className="card-subtitle">
+                    Lengkapi semua kolom yang wajib diisi
+                  </div>
                 </div>
               </div>
               <div className="card-body">
                 <form onSubmit={handleUpload}>
                   <div className="form-group">
-                    <label className="form-label">Nama Lengkap <span>*</span></label>
+                    <label className="form-label">
+                      Nama Lengkap <span>*</span>
+                    </label>
                     <input
                       type="text"
                       className="form-input"
                       placeholder="Masukkan nama lengkap sesuai KTP"
                       value={nama}
-                      onChange={e => setNama(e.target.value)}
+                      onChange={(e) => setNama(e.target.value)}
                       required
                     />
                   </div>
 
                   <div className="form-group">
-                    <label className="form-label">Upload KTP / Dokumen Pendukung <span>*</span></label>
-                    <div className={`file-upload-area ${file ? 'has-file' : ''}`}>
+                    <label className="form-label">
+                      Upload KTP / Dokumen Pendukung <span>*</span>
+                    </label>
+                    <div
+                      className={`file-upload-area ${file ? "has-file" : ""}`}
+                    >
                       <input
                         type="file"
                         accept="image/*,.pdf"
-                        onChange={e => setFile(e.target.files[0])}
+                        onChange={(e) => setFile(e.target.files[0])}
                         required={!file}
                       />
-                      <div className="file-upload-icon">{file ? '✅' : '📁'}</div>
+                      <div className="file-upload-icon">
+                        {file ? "✅" : "📁"}
+                      </div>
                       <div className="file-upload-text">
-                        {file ? 'File dipilih' : 'Klik atau seret file ke sini'}
+                        {file ? "File dipilih" : "Klik atau seret file ke sini"}
                       </div>
                       <div className="file-upload-sub">
-                        {file ? '' : 'Format: JPG, PNG, PDF — Maks. 5MB'}
+                        {file ? "" : "Format: JPG, PNG, PDF — Maks. 5MB"}
                       </div>
-                      {file && <div className="file-name-tag">📎 {file.name}</div>}
+                      {file && (
+                        <div className="file-name-tag">📎 {file.name}</div>
+                      )}
                     </div>
                   </div>
 
-                  <button type="submit" className="btn-primary" disabled={loading}>
-                    {loading ? <><span className="spinner" /> Mengirim...</> : <> 📨 &nbsp;Kirim Pengajuan</>}
+                  <button
+                    type="submit"
+                    className="btn-primary"
+                    disabled={loading}
+                  >
+                    {loading ? (
+                      <>
+                        <span className="spinner" /> Mengirim...
+                      </>
+                    ) : (
+                      <> 📨 &nbsp;Kirim Pengajuan</>
+                    )}
                   </button>
                 </form>
               </div>
@@ -798,7 +863,9 @@ function App() {
                 <div className="card-icon">🔍</div>
                 <div>
                   <div className="card-title">Cek Status Layanan</div>
-                  <div className="card-subtitle">Masukkan ID tracking yang Anda terima</div>
+                  <div className="card-subtitle">
+                    Masukkan ID tracking yang Anda terima
+                  </div>
                 </div>
               </div>
               <div className="card-body">
@@ -808,16 +875,31 @@ function App() {
                     className="form-input"
                     placeholder="Contoh: 5115"
                     value={trackId}
-                    onChange={e => { setTrackId(e.target.value); setTrackError(''); setTrackResult(null); }}
-                    onKeyDown={e => e.key === 'Enter' && handleTrack()}
+                    onChange={(e) => {
+                      setTrackId(e.target.value);
+                      setTrackError("");
+                      setTrackResult(null);
+                    }}
+                    onKeyDown={(e) => e.key === "Enter" && handleTrack()}
                   />
-                  <button className="btn-primary" onClick={handleTrack} style={{ whiteSpace: 'nowrap' }}>
+                  <button
+                    className="btn-primary"
+                    onClick={handleTrack}
+                    style={{ whiteSpace: "nowrap" }}
+                  >
                     🔍 &nbsp;Cari
                   </button>
                 </div>
 
                 {trackError && (
-                  <div style={{ marginTop: 14, color: '#e63946', fontSize: 13, fontWeight: 600 }}>
+                  <div
+                    style={{
+                      marginTop: 14,
+                      color: "#e63946",
+                      fontSize: 13,
+                      fontWeight: 600,
+                    }}
+                  >
                     ⚠️ {trackError}
                   </div>
                 )}
@@ -826,7 +908,16 @@ function App() {
                   <div className="track-result">
                     <div className="track-result-row">
                       <span className="track-label">ID Tracking</span>
-                      <span className="track-value" style={{ fontFamily: 'DM Serif Display, serif', fontSize: 18, color: 'var(--green-mid)' }}>#{trackResult.id}</span>
+                      <span
+                        className="track-value"
+                        style={{
+                          fontFamily: "DM Serif Display, serif",
+                          fontSize: 18,
+                          color: "var(--green-mid)",
+                        }}
+                      >
+                        #{trackResult.id}
+                      </span>
                     </div>
                     <div className="track-result-row">
                       <span className="track-label">Nama Pemohon</span>
@@ -840,9 +931,14 @@ function App() {
                       <span className="track-label">Tanggal</span>
                       <span className="track-value">{trackResult.tanggal}</span>
                     </div>
-                    <div className="track-result-row" style={{ marginBottom: 0 }}>
+                    <div
+                      className="track-result-row"
+                      style={{ marginBottom: 0 }}
+                    >
                       <span className="track-label">Status</span>
-                      <span className={`badge ${trackResult.status === 'Selesai' ? 'badge-selesai' : 'badge-pending'}`}>
+                      <span
+                        className={`badge ${trackResult.status === "Selesai" ? "badge-selesai" : "badge-pending"}`}
+                      >
                         <span className="badge-dot" />
                         {trackResult.status}
                       </span>
@@ -859,7 +955,9 @@ function App() {
               <div className="card-icon">⚙️</div>
               <div style={{ flex: 1 }}>
                 <div className="card-title">Daftar Pengajuan Masuk</div>
-                <div className="card-subtitle">Kelola dan verifikasi pengajuan warga</div>
+                <div className="card-subtitle">
+                  Kelola dan verifikasi pengajuan warga
+                </div>
               </div>
               <button className="btn-secondary" onClick={fetchAdminData}>
                 🔄 &nbsp;Refresh
@@ -879,33 +977,56 @@ function App() {
                     </tr>
                   </thead>
                   <tbody>
-                    {listData.length > 0 ? listData.map(d => (
-                      <tr key={d.id}>
-                        <td><span className="td-id">#{d.id}</span></td>
-                        <td><span className="td-name">{d.nama}</span></td>
-                        <td style={{ color: 'var(--text-mid)', fontSize: 13 }}>{d.tipe || 'Surat Domisili'}</td>
-                        <td style={{ color: 'var(--text-light)', fontSize: 13 }}>{d.tanggal}</td>
-                        <td>
-                          <span className={`badge ${d.status === 'Selesai' ? 'badge-selesai' : 'badge-pending'}`}>
-                            <span className="badge-dot" />
-                            {d.status}
-                          </span>
-                        </td>
-                        <td>
-                          {d.status !== 'Selesai' && (
-                            <button className="btn-approve" onClick={() => updateStatus(d.id)}>
-                              ✅ Setujui
-                            </button>
-                          )}
-                        </td>
-                      </tr>
-                    )) : (
+                    {listData.length > 0 ? (
+                      listData.map((d) => (
+                        <tr key={d.id}>
+                          <td>
+                            <span className="td-id">#{d.id}</span>
+                          </td>
+                          <td>
+                            <span className="td-name">{d.nama}</span>
+                          </td>
+                          <td
+                            style={{ color: "var(--text-mid)", fontSize: 13 }}
+                          >
+                            {d.tipe || "Surat Domisili"}
+                          </td>
+                          <td
+                            style={{ color: "var(--text-light)", fontSize: 13 }}
+                          >
+                            {d.tanggal}
+                          </td>
+                          <td>
+                            <span
+                              className={`badge ${d.status === "Selesai" ? "badge-selesai" : "badge-pending"}`}
+                            >
+                              <span className="badge-dot" />
+                              {d.status}
+                            </span>
+                          </td>
+                          <td>
+                            {d.status !== "Selesai" && (
+                              <button
+                                className="btn-approve"
+                                onClick={() => updateStatus(d.id)}
+                              >
+                                ✅ Setujui
+                              </button>
+                            )}
+                          </td>
+                        </tr>
+                      ))
+                    ) : (
                       <tr>
                         <td colSpan="6">
                           <div className="empty-state">
                             <div className="empty-state-icon">📭</div>
-                            <div className="empty-state-text">Belum ada pengajuan masuk</div>
-                            <div className="empty-state-sub">Data pengajuan dari warga akan muncul di sini</div>
+                            <div className="empty-state-text">
+                              Belum ada pengajuan masuk
+                            </div>
+                            <div className="empty-state-sub">
+                              Data pengajuan dari warga akan muncul di sini
+                            </div>
                           </div>
                         </td>
                       </tr>
