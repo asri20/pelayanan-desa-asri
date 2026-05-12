@@ -88,5 +88,22 @@ app.get('/api/admin/data', async (req, res) => {
     }
 });
 
+// API 4: Update Status (Untuk tombol Setujui)
+app.patch('/api/admin/update/:id', async (req, res) => {
+    try {
+        const { status } = req.body;
+        const connection = await mysql.createConnection(dbConfig);
+        await connection.execute(
+            'UPDATE pelayanan SET status = ? WHERE id = ?',
+            [status, req.params.id]
+        );
+        await connection.end();
+        res.json({ message: "Status berhasil diperbarui" });
+    } catch (error) {
+        console.error(error);
+        res.status(500).json({ message: "Gagal update status" });
+    }
+});
+
 const PORT = process.env.PORT || 5000;
 app.listen(PORT, () => console.log(`Server cloud running on port ${PORT}`));
