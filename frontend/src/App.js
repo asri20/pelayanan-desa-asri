@@ -653,15 +653,16 @@ function App() {
 
   const updateStatus = async (id) => {
     try {
-      // Endpoint Update Status
-      await fetch(`${API_URL}/api/admin/update/${id}`, {
-        method: 'PATCH',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ status: 'Selesai' })
-      });
-      fetchAdminData();
-    } catch { alert("Gagal update status di database Cloud"); }
-  };
+        await fetch(`${API_URL}/api/admin/update-status/${id}`, { // Pakai update-status
+            method: 'PATCH',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ status: 'Selesai' })
+        });
+        fetchAdminData(); // Refresh tabel setelah update
+    } catch { 
+        alert("Gagal update status"); 
+    }
+};
 
   const handleTrack = async () => {
     if (!trackId.trim()) return;

@@ -92,20 +92,25 @@ app.get('/api/admin/data', async (req, res) => {
     }
 });
 
-// API 4: Update Status (Untuk tombol Setujui)
-app.patch('/api/admin/update/:id', async (req, res) => {
+// Pakai rute yang lebih simpel untuk tes
+app.patch('/api/admin/update-status/:id', async (req, res) => {
+    console.log("Request masuk untuk ID:", req.params.id); // Ini buat ngecek di log
     try {
-        const { status } = req.body;
         const connection = await mysql.createConnection(dbConfig);
-        await connection.execute(
+        const [result] = await connection.execute(
             'UPDATE pelayanan SET status = ? WHERE id = ?',
-            [status, req.params.id]
+            ['Selesai', req.params.id]
         );
         await connection.end();
+        
+        if (result.affectedRows === 0) {
+            return res.status(404).json({ message: "Data tidak ditemukan di database" });
+        }
+
         res.json({ message: "Status berhasil diperbarui" });
     } catch (error) {
-        console.error(error);
-        res.status(500).json({ message: "Gagal update status" });
+        console.error("Error Detail:", error);
+        res.status(500).json({ message: "Gagal update status", error: error.message });
     }
 });
 
